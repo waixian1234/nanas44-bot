@@ -1,25 +1,15 @@
 import telebot
 from telebot import types
-import time
 import os
 
-# === 配置区域 ===
-API_TOKEN = "8235876145:AAH9xfHaogajtOwzuV02iyfMNoRG2l2E4do"
-ADMIN_IDS = [1840751528, 1280460690]
-SUBSCRIBERS_FILE = "subscribers.txt"
-BROADCAST_DELAY = 1.2  # 每1.2秒发一个，安全群发
+# === 替换成你自己的 Bot Token ===
+bot = telebot.TeleBot("8235876145:AAH9xfHaogajtOwzuV02iyfMNoRG2l2E4do")
 
-bot = telebot.TeleBot(API_TOKEN)
-
-# === 自动欢迎 + 图片 + 按钮 ===
+# === /start 欢迎函数 ===
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     chat_id = message.chat.id
-    first_name = message.from_user.first_name or "Boss"
-
-    # 保存订阅者
-    with open(SUBSCRIBERS_FILE, "a") as f:
-        f.write(str(chat_id) + "\n")
+    first_name = message.from_user.first_name
 
     welcome_text = f"""👋 HI {first_name}！
 
@@ -31,61 +21,53 @@ Join Grouplink IOI Partnership Ambil E-wallet Angpaw 💸
 """
 
     markup = types.InlineKeyboardMarkup()
-    btn1 = types.InlineKeyboardButton("📢 NANAS44 OFFICIAL CHANNEL", url="https://t.me/nanas44")
+    btn1 = types.InlineKeyboardButton("📡 NANAS44 OFFICIAL CHANNEL", url="https://t.me/nanas44")
     btn2 = types.InlineKeyboardButton("💸 E-WALLET ANGPAO GROUP", url="https://t.me/addlist/OyQ3Pns_j3w5Y2M1")
     markup.add(btn1)
     markup.add(btn2)
 
-    # 发欢迎图片
-   import os
+    # === 发送欢迎图片 ===
+    image_path = os.path.join(os.path.dirname(__file__), "banner-01.png")
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as photo:
+            bot.send_photo(chat_id, photo)
 
-image_path = os.path.join(os.path.dirname(__file__), "banner-01.png")
-if os.path.exists(image_path):
-    with open(image_path, "rb") as photo:
-        bot.send_photo(chat_id, photo)
-
-    # 发文字和按钮
+    # === 发送欢迎文字 + 按钮 ===
     bot.send_message(chat_id, welcome_text, reply_markup=markup)
 
-# === 管理员广播指令 ===
+# === 群发广播函数 ===
 @bot.message_handler(commands=['broadcast'])
 def handle_broadcast(message):
-    if message.from_user.id not in ADMIN_IDS:
-        bot.reply_to(message, "❌ 你没有权限使用此功能。")
+    admin_ids = [1840751528, 1280460690]  # 你的管理员 ID
+    if message.from_user.id not in admin_ids:
         return
 
-    msg = bot.send_message(message.chat.id, "📢 请发送你要广播的内容：")
-    bot.register_next_step_handler(msg, do_broadcast)
-
-def do_broadcast(message):
     try:
-        with open(SUBSCRIBERS_FILE, "r") as f:
-            subscribers = list(set(f.read().splitlines()))
+        with open("subscribers.txt", "r") as f:
+            subscribers = f.read().splitlines()
+    except FileNotFoundError:
+        subscribers = []
 
-        count = 0
-        for user_id in subscribers:
-            try:
-                bot.send_message(user_id, message.text)
-                count += 1
-                time.sleep(BROADCAST_DELAY)
-            except:
-                continue
-        bot.reply_to(message, f"✅ 广播完成，已发送给 {count} 位用户。")
-    except Exception as e:
-        bot.reply_to(message, f"❌ 出错：{e}")
+    for user_id in subscribers:
+        try:
+            bot.forward_message(chat_id=user_id, from_chat_id=message.chat.id, message_id=message.message_id + 1)
+        except Exception as e:
+            print(f"无法转发给 {user_id}: {e}")
 
-# === 查看订阅人数 ===
-@bot.message_handler(commands=['subcount'])
-def handle_subcount(message):
-    if not os.path.exists(SUBSCRIBERS_FILE):
-        bot.reply_to(message, "目前还没有任何订阅者。")
-        return
+# === 自动记录订阅者 ===
+@bot.message_handler(func=lambda message: True)
+def handle_all(message):
+    user_id = str(message.chat.id)
+    try:
+        with open("subscribers.txt", "r") as f:
+            subscribers = f.read().splitlines()
+    except FileNotFoundError:
+        subscribers = []
 
-    with open(SUBSCRIBERS_FILE, "r") as f:
-        subscribers = set(f.read().splitlines())
-    count = len(subscribers)
-    bot.reply_to(message, f"目前共有 {count} 位订阅者 ✅")
+    if user_id not in subscribers:
+        subscribers.append(user_id)
+        with open("subscribers.txt", "a") as f:
+            f.write(user_id + "\n")
 
 # === 启动 Bot ===
-print("🤖 Bot 已启动，等待消息中...")
-bot.infinity_polling()
+bot.polling()
