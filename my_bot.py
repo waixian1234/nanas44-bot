@@ -37,9 +37,12 @@ Join Grouplink IOI Partnership Ambil E-wallet Angpaw 💸
     markup.add(btn2)
 
     # 发欢迎图片
-    if os.path.exists("banner-01.png"):
-        with open("banner-01.png", "rb") as photo:
-            bot.send_photo(chat_id, photo)
+   import os
+
+image_path = os.path.join(os.path.dirname(__file__), "banner-01.png")
+if os.path.exists(image_path):
+    with open(image_path, "rb") as photo:
+        bot.send_photo(chat_id, photo)
 
     # 发文字和按钮
     bot.send_message(chat_id, welcome_text, reply_markup=markup)
