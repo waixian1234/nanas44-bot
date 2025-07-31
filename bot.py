@@ -26,7 +26,6 @@ def save_log(filename, data):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     first_name = update.effective_user.first_name or "there"
-    # Save subscriber
     if not os.path.exists(SUBSCRIBER_FILE):
         open(SUBSCRIBER_FILE, "w").close()
     with open(SUBSCRIBER_FILE, "r+") as f:
@@ -34,14 +33,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user_id not in lines:
             f.write(f"{user_id}\n")
             save_log("new_users.txt", f"{datetime.datetime.now()} - {user_id}")
-    # Welcome text
-    welcome_text = f"""👋 HI {first_name}！
-
-🪜 Step 1:
-Join Nanas44 Official Channel Claim Free 🎁
-
-🪜 Step 2:
-Join Grouplink IOI Partnership Ambil E-wallet Angpaw 💸"""
+    welcome_text = f"👋 HI {first_name}！\n\n🪜 Step 1:\nJoin Nanas44 Official Channel Claim Free 🎁\n\n🪜 Step 2:\nJoin Grouplink IOI Partnership Ambil E-wallet Angpaw 💸"
     keyboard = [
         [InlineKeyboardButton("NANAS44 OFFICIAL CHANNEL", url="https://t.me/nanas44")],
         [InlineKeyboardButton("E-WALLET ANGPAO GROUP", url="https://t.me/addlist/OyQ3Pns_j3w5Y2M1")]
@@ -92,14 +84,35 @@ async def broadcast_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def forward_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ADMIN_IDS:
         return
-    with open(SUBSCRIBER_FILE, "r") as f:
-        ids = list(set(f.read().splitlines()))
-    for uid in ids:
-        try:
-            await update.message.copy(chat_id=int(uid))
-            time.sleep(DELAY)
-        except:
-            continue
+    if update.message.forward_from_chat:
+        # 👉 真实频道转发，使用 forward_message 保留 from channel
+        from_chat_id = update.message.forward_from_chat.id
+        forward_message_id = update.message.forward_from_message_id
+        with open(SUBSCRIBER_FILE, "r") as f:
+            ids = list(set(f.read().splitlines()))
+        success = 0
+        for uid in ids:
+            try:
+                await context.bot.forward_message(
+                    chat_id=int(uid),
+                    from_chat_id=from_chat_id,
+                    message_id=forward_message_id
+                )
+                success += 1
+                time.sleep(DELAY)
+            except:
+                continue
+        await update.message.reply_text(f"✅ Forwarded with channel source to {success} users.")
+    else:
+        # 👉 非频道转发（如直接转发群组或复制贴文），fallback 到旧的 copy 逻辑
+        with open(SUBSCRIBER_FILE, "r") as f:
+            ids = list(set(f.read().splitlines()))
+        for uid in ids:
+            try:
+                await update.message.copy(chat_id=int(uid))
+                time.sleep(DELAY)
+            except:
+                continue
 
 
 async def subcount(update: Update, context: ContextTypes.DEFAULT_TYPE):
