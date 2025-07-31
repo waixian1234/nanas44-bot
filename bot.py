@@ -36,7 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = f"👋 HI {first_name}！\n\n🪜 Step 1:\nJoin Nanas44 Official Channel Claim Free 🎁\n\n🪜 Step 2:\nJoin Grouplink IOI Partnership Ambil E-wallet Angpaw 💸"
     keyboard = [
         [InlineKeyboardButton("NANAS44 OFFICIAL CHANNEL", url="https://t.me/nanas44")],
-        [InlineKeyboardButton("E-WALLET ANGPAO GROUP", url="https://t.me/addlist/OyQ3Pns_j3w5Y2M1")]
+        [InlineKeyboardButton("E-WALLET ANGPAO GROUP", url="https://t.me/addlist/XsWuNiUNHG05ZDg1")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     with open("banner-01.png", "rb") as img:
